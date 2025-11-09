@@ -1,0 +1,13 @@
+# Ignore virtual environments
+.venv/
+venv/
+
+# Ignore OS and IDE files
+__pycache__/
+.DS_Store
+*.pyc
+
+# Ignore data dumps or large model files
+*.pkl
+*.pt
+*.ckpt
