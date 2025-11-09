@@ -1,20 +1,37 @@
 # src/inference.py
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
-import torch
-from config import DEVICE  # optional: if you want to use GPU
 
-# Load model + tokenizer
-MODEL_PATH = "path/to/saved/model"  # replace with actual path after training
-tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
-model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATH)
-model.eval()  # set to eval mode
-model.to(DEVICE)  # optional, move to GPU if available
+import torch
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+
+# pick a real model so tests don't fail
+MODEL_NAME = "distilbert-base-uncased"
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
+# load tokenizer and model
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
+model.to(DEVICE)
+model.eval()
+
 
 def predict(text: str):
-    inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True)
-    inputs = {k: v.to(DEVICE) for k, v in inputs.items()}  # move tensors to device
+    """
+    Runs inference on a single text string and returns:
+    - predicted_class: int
+    - logits: torch.Tensor
+    """
+    inputs = tokenizer(
+        text,
+        return_tensors="pt",
+        truncation=True,
+        padding=True
+    )
+    # move to device
+    inputs = {k: v.to(DEVICE) for k, v in inputs.items()}
+
     with torch.no_grad():
         outputs = model(**inputs)
-        logits = outputs.logits
+        logits = outputs.logits  # shape: (1, num_labels)
         predicted_class = torch.argmax(logits, dim=1).item()
+
     return predicted_class, logits
